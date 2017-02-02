@@ -6,13 +6,22 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-10 11:10:36 (CST)
-# Last Update:星期四 2016-12-15 17:23:1 (CST)
+# Last Update:星期四 2017-2-2 13:6:10 (CST)
 #          By:
 # Description:
 # **************************************************************************
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers import SchedulerAlreadyRunningError
+from apscheduler.jobstores.base import ConflictingIdError
 from sqlalchemy.orm import sessionmaker
+
+DEFAULT_CONFIG = {
+    'scheduler': BackgroundScheduler(),
+    'jobstores': None,
+    'executors': None,
+    'job_defaults': None,
+    'timezone': None
+}
 
 
 class APScheduler(object):
@@ -23,12 +32,18 @@ class APScheduler(object):
             self.init_app(app)
 
     def init_app(self, app):
-        self.scheduler = app.config.setdefault('SCHEDULER', self.scheduler)
-        self.jobstores = app.config.setdefault('SCHEDULER_JOBSTORES', None)
-        self.executors = app.config.setdefault('SCHEDULER_EXECUTORS', None)
+        config = DEFAULT_CONFIG
+        self.scheduler = app.config.setdefault('SCHEDULER',
+                                               config['scheduler'])
+        self.jobstores = app.config.setdefault('SCHEDULER_JOBSTORES',
+                                               config['jobstores'])
+        self.executors = app.config.setdefault('SCHEDULER_EXECUTORS',
+                                               config['executors'])
         self.job_defaults = app.config.setdefault('SCHEDULER_JOB_DEFAULTS',
-                                                  None)
-        self.timezone = app.config.setdefault('SCHEDULER_TIMEZONE', None)
+                                                  config['job_defaults'])
+        self.timezone = app.config.setdefault('SCHEDULER_TIMEZONE',
+                                              config['timezone'])
+        api_enabled = app.config.setdefault('SCHEDULER_API_ENABLED', True)
 
         assert self.jobstores is not None
         assert self.executors is not None
@@ -39,6 +54,8 @@ class APScheduler(object):
             executors=self.executors,
             job_defaults=self.job_defaults,
             timezone=self.timezone)
+        if api_enabled:
+            self.register_api(app)
 
     def query(self, table='jobs_t', jobstore='default'):
         jobstore = self.jobstores.get(jobstore)
@@ -53,8 +70,29 @@ class APScheduler(object):
     def start(self, paused=False):
         try:
             self.scheduler.start(paused)
-        except SchedulerAlreadyRunningError:
+        except SchedulerAlreadyRunningError as e:
             pass
+
+    def shutdown(self, wait=True):
+        self.scheduler.shutdown(wait)
+
+    def add_job(self, *args, **kwargs):
+        try:
+            return self.scheduler.add_job(*args, **kwargs)
+        except ConflictingIdError as e:
+            return e
+
+    def run_job(self, id, jobstore=None):
+        job = self.scheduler.get_job(id, jobstore)
+
+        if not job:
+            raise LookupError(id)
+
+        job.func(*job.args, **job.kwargs)
+
+    def register_api(self, app):
+        from .urls import site
+        app.register_blueprint(site)
 
     def __getattr__(self, name):
         return getattr(self.scheduler, name)
