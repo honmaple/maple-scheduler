@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 12:24:45 (CST)
-# Last Update:星期四 2017-2-2 12:47:46 (CST)
+# Last Update:星期四 2017-2-2 16:6:16 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -75,7 +75,7 @@ class Serializer(object):
             'args': instance.args,
             'coalesce': instance.coalesce,
             'executor': instance.executor,
-            'func': instance.func.__doc__.replace('\n', ''),
+            'func': instance.func.__doc__,
             'func_ref': instance.func_ref,
             'id': instance.id,
             'kwargs': instance.kwargs,

@@ -6,13 +6,14 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update:星期四 2017-2-2 13:2:51 (CST)
+# Last Update:星期四 2017-2-2 16:6:54 (CST)
 #          By:
 # Description:
 # **************************************************************************
 from flask_apscheduler import scheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from scheduler import create_app
+from pytz import timezone
 
 
 class Config(object):
@@ -29,9 +30,14 @@ class Config(object):
     }
 
     SCHEDULER_JOB_DEFAULTS = {'coalesce': False, 'max_instances': 3}
-    SCHEDULER_TIMEZONE = 'UTC'
+    SCHEDULER_TIMEZONE = timezone('Asia/Shanghai')
 
     SCHEDULER_API_ENABLED = True
+    # SCHEDULER_API_RULE = [
+    #     lambda func:True,
+    #     lambda func:True,
+    #     lambda func:True
+    # ]
     JSON_AS_ASCII = False
 
 
@@ -46,8 +52,11 @@ def hello():
     print(time())
 
 
-a = scheduler.add_job(hello, trigger='interval', seconds=10, id='3')
-print(a)
+from apscheduler.jobstores.base import ConflictingIdError
+try:
+    a = scheduler.add_job(hello, trigger='interval', seconds=10, id='3')
+except ConflictingIdError as e:
+    print(e)
 
 if __name__ == '__main__':
     app.run()

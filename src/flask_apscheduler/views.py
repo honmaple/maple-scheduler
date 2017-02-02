@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期四 2017-2-2 13:19:22 (CST)
+# Last Update:星期四 2017-2-2 16:7:42 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -54,7 +54,7 @@ class JobPauseView(MethodView):
             return HTTPResponse(
                 HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
         except JobLookupError:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         except Exception as e:
@@ -73,7 +73,7 @@ class JobResumeView(MethodView):
             return HTTPResponse(
                 HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
         except JobLookupError:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         except Exception as e:
@@ -92,7 +92,7 @@ class JobRunView(MethodView):
             return HTTPResponse(
                 HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
         except JobLookupError:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         except Exception as e:
@@ -101,7 +101,7 @@ class JobRunView(MethodView):
                 HTTPResponse.OTHER_ERROR, description=msg).to_response()
 
 
-class DateListView(MethodView):
+class SchedulerListView(MethodView):
     def get(self):
         jobs = scheduler.get_jobs()
         serializer = Serializer(jobs)
@@ -109,27 +109,36 @@ class DateListView(MethodView):
             HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
     def post(self):
-        data = request.json()
-        trigger = data.pop('trigger', 'date')
+        '''
+        :param id:job id
+        :param trigger:date or interval or crontab
+        :param job:if job is None,the default func is http_request
+        '''
+        post_data = request.json
+        job = post_data.pop('job', None)
+        func = post_data.get('func', None)
+        if func is not None and not scheduler.func_rule(func):
+            return HTTPResponse(HTTPResponse.FORBIDDEN).to_response()
         try:
-            job = scheduler.add_job(trigger=trigger, **data)
+            job = scheduler.add_job(**post_data)
             serializer = Serializer(job)
             return HTTPResponse(
                 HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
         except ConflictingIdError:
-            msg = 'Job %s is exists' % data.get('id')
+            msg = 'Job ID %s is exists' % post_data.get('id')
             return HTTPResponse(
                 HTTPResponse.JOB_ALREADY_EXISTS, description=msg).to_response()
         except Exception as e:
+            msg = str(e)
             return HTTPResponse(
-                HTTPResponse.OTHER_ERROR, description=e).to_response()
+                HTTPResponse.OTHER_ERROR, description=msg).to_response()
 
 
-class DateView(MethodView):
+class SchedulerView(MethodView):
     def get(self, pk):
         job = scheduler.get_job(pk)
         if not job:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         serializer = Serializer(job)
@@ -137,61 +146,33 @@ class DateView(MethodView):
             HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
     def put(self, pk):
-        data = request.get_json()
+        post_data = request.json
         try:
-            scheduler.modify_job(pk, **data)
+            scheduler.modify_job(pk, **post_data)
             job = scheduler.get_job(pk)
             serializer = Serializer(job)
             return HTTPResponse(
                 HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
         except JobLookupError:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         except Exception as e:
+            msg = str(e)
             return HTTPResponse(
-                HTTPResponse.OTHER_ERROR, description=e).to_response()
+                HTTPResponse.OTHER_ERROR, description=msg).to_response()
 
     def delete(self, pk):
         try:
-            job = scheduler.delete_job(pk)
-            serializer = Serializer(job)
+            scheduler.remove_job(pk)
+            msg = 'Job ID %s delete success' % pk
             return HTTPResponse(
-                HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
+                HTTPResponse.NORMAL_STATUS, description=msg).to_response()
         except JobLookupError:
-            msg = 'Job %s not found' % pk
+            msg = 'Job ID %s not found' % pk
             return HTTPResponse(
                 HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
         except Exception as e:
+            msg = str(e)
             return HTTPResponse(
-                HTTPResponse.OTHER_ERROR, description=e).to_response()
-
-# class IntervalListView(MethodView):
-#     def get(self):
-#         pass
-
-#     def post(self):
-#         post_data = request.get_json()
-#         id = post_data.pop('id', None)
-#         date = post_data.pop('date', None)
-#         task = post_data.pop('task', None)
-#         kwargs = dict(func='s', trigger='date', run_date=date, kwargs=task)
-#         if id is not None:
-#             id = str(id)
-#             kwargs.update(id=id)
-#             if scheduler.get_job(id) is not None:
-#                 msg = u'任务ID:%s 已存在' % id
-#                 return msg
-
-#         scheduler.add_job(**kwargs)
-#         return 'success'
-
-# class IntervalView(MethodView):
-#     def get(self, pk):
-#         pass
-
-#     def put(self, pk):
-#         pass
-
-#     def delete(self, pk):
-#         pass
+                HTTPResponse.OTHER_ERROR, description=msg).to_response()

@@ -6,14 +6,13 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-10 11:10:36 (CST)
-# Last Update:星期四 2017-2-2 13:6:10 (CST)
+# Last Update:星期四 2017-2-2 16:5:58 (CST)
 #          By:
 # Description:
 # **************************************************************************
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers import SchedulerAlreadyRunningError
 from apscheduler.jobstores.base import ConflictingIdError
-from sqlalchemy.orm import sessionmaker
 
 DEFAULT_CONFIG = {
     'scheduler': BackgroundScheduler(),
@@ -43,6 +42,7 @@ class APScheduler(object):
                                                   config['job_defaults'])
         self.timezone = app.config.setdefault('SCHEDULER_TIMEZONE',
                                               config['timezone'])
+        self.api_func_rule = app.config.setdefault('SCHEDULER_API_RULE', False)
         api_enabled = app.config.setdefault('SCHEDULER_API_ENABLED', True)
 
         assert self.jobstores is not None
@@ -57,7 +57,23 @@ class APScheduler(object):
         if api_enabled:
             self.register_api(app)
 
+    def func_rule(self, func):
+        rule = self.api_func_rule
+        if isinstance(rule, list):
+            return self.func_rule_list(rule, func)
+        elif callable(rule):
+            return rule(func)
+        return rule
+
+    def func_rule_list(self, rules, func):
+        for rule in rules:
+            self.api_func_rule = rule
+            if not self.func_rule(func):
+                return False
+        return True
+
     def query(self, table='jobs_t', jobstore='default'):
+        from sqlalchemy.orm import sessionmaker
         jobstore = self.jobstores.get(jobstore)
         if jobstore is None:
             raise ValueError('%s is not exist' % jobstore)
@@ -75,12 +91,6 @@ class APScheduler(object):
 
     def shutdown(self, wait=True):
         self.scheduler.shutdown(wait)
-
-    def add_job(self, *args, **kwargs):
-        try:
-            return self.scheduler.add_job(*args, **kwargs)
-        except ConflictingIdError as e:
-            return e
 
     def run_job(self, id, jobstore=None):
         job = self.scheduler.get_job(id, jobstore)
