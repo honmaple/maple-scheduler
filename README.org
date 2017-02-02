@@ -6,9 +6,9 @@
 ** Configure
 
    |------------------------+----------------------------------------------------------------------|
-   | SCHEDULER              | apscheduler jobstores,defaule *BackgroundScheduler()*                |
-   | SCHEDULER_JOBSTORES    | apscheduler jobstores,defaule *None*                                 |
-   | SCHEDULER_EXECUTORS    | apscheduler executors,defaule *None*                                 |
+   | SCHEDULER              | apscheduler jobstores,default *BackgroundScheduler()*                |
+   | SCHEDULER_JOBSTORES    | apscheduler jobstores,default *None*                                 |
+   | SCHEDULER_EXECUTORS    | apscheduler executors,default *None*                                 |
    | SCHEDULER_JOB_DEFAULTS | apscheduler job_defaults,default *None*                              |
    | SCHEDULER_TIMEZONE     | apscheduler timezone,default *UTC*                                   |
    | SCHEDULER_API_ENABLED  | True or False,if True then register restful api,default *True*       |
@@ -17,40 +17,41 @@
    
 ** Some Api
    - */scheduler*
-     - GET
+     - GET:
        get all jobs
-     - POST
+     - POST:
        add a new job,the *func* is same as 'jobs:vvv'
    - */scheduler/status*
-     - GET
+     - GET:
        get scheduler status,include running,executors,job_defaults
-     - POST
+     - POST:
        start scheduler.You can pass parameter *pause* (default: *False*)
        #+BEGIN_EXAMPLE
+       # when pause in ['1',1,'true','True']
        pause = True 
        #+END_EXAMPLE
-       when pause in *['1',1,'true','True']*)
-     - DELETE
+     - DELETE:
        shutdown scheduler.You can pass parameter *wait* (default: *True*) 
        #+BEGIN_EXAMPLE
+       # when wait in ['0',0,'False','false']
        wait = False 
        #+END_EXAMPLE
-       when wait in *['0',0,'False','false']*)
+       
    - */scheduler/<pk>*
-     - GET
-       get a job with id
-     - PUT
-       modify a job with id
-     - DELETE
-       delete a job with id
+     - GET:
+       get a job with id.
+     - PUT:
+       modify a job with id.
+     - DELETE:
+       delete a job with id.
    - */scheduler/<pk>/pause*
-     - POST
-       pause a job with id
+     - POST:
+       pause a job with id.
    - */scheduler/<pk>/resume*
-     - POST
-       resume a job with id
+     - POST:
+       resume a job with id.
    - */scheduler/<pk>/execute*
-     - POST
+     - POST:
        Executes a job with id right now.
 
        
