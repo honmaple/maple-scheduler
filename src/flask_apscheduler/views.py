@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期四 2017-2-2 16:7:42 (CST)
+# Last Update:星期四 2017-2-2 17:20:20 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -17,31 +17,38 @@ from . import scheduler
 from .utils import HTTPResponse, Serializer
 
 
-class SchedulerPauseView(MethodView):
-    def post(self):
-        """Pauses scheduler."""
-        scheduler.pause_job()
-        data = {'running': scheduler.running}
+class SchedulerStatusView(MethodView):
+    def get(self):
+        """get scheduler."""
+        serializer = Serializer(scheduler, scheduler=True)
         return HTTPResponse(
-            HTTPResponse.NORMAL_STATUS, data=data).to_response()
+            HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
-
-class SchedulerResumeView(MethodView):
     def post(self):
-        """Resumes scheduler."""
-        scheduler.resume_job()
-        data = {'running': scheduler.running}
+        """start scheduler."""
+        post_data = request.json
+        pause = post_data.pop('pause', False)
+        if pause in [1, '1', 'true', 'True']:
+            pause = True
+        else:
+            pause = False
+        scheduler.start(pause)
+        serializer = Serializer(scheduler, scheduler=True)
         return HTTPResponse(
-            HTTPResponse.NORMAL_STATUS, data=data).to_response()
+            HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
-
-class SchedulerRunView(MethodView):
-    def post(self):
-        """Executes scheduler."""
-        scheduler.start(paused=True)
-        data = {'running': scheduler.running}
+    def delete(self):
+        """shutdown scheduler."""
+        post_data = request.json
+        wait = post_data.pop('wait', True)
+        if wait in [0, '0', 'false', 'False']:
+            wait = False
+        else:
+            wait = True
+        scheduler.shutdown(wait)
+        serializer = Serializer(scheduler, scheduler=True)
         return HTTPResponse(
-            HTTPResponse.NORMAL_STATUS, data=data).to_response()
+            HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
 
 class JobPauseView(MethodView):
@@ -82,7 +89,7 @@ class JobResumeView(MethodView):
                 HTTPResponse.OTHER_ERROR, description=msg).to_response()
 
 
-class JobRunView(MethodView):
+class JobExecuteView(MethodView):
     def post(self, pk):
         """Executes a job."""
         try:

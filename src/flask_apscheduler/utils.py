@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 12:24:45 (CST)
-# Last Update:星期四 2017-2-2 16:6:16 (CST)
+# Last Update:星期四 2017-2-2 16:53:41 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -58,8 +58,9 @@ class HTTPResponse(object):
 
 
 class Serializer(object):
-    def __init__(self, instance):
+    def __init__(self, instance, scheduler=False):
         self.instance = instance
+        self.scheduler = scheduler
 
     @property
     def data(self):
@@ -71,7 +72,13 @@ class Serializer(object):
         return [self._serializer(i) for i in instances]
 
     def _serializer(self, instance):
-        data = {
+        if self.scheduler:
+            return {
+                'running': instance.running,
+                'executors': instance.executors,
+                'job_defaults': instance.job_defaults
+            }
+        return {
             'args': instance.args,
             'coalesce': instance.coalesce,
             'executor': instance.executor,
@@ -85,4 +92,3 @@ class Serializer(object):
             'next_run_time': instance.next_run_time,
             'pending': instance.pending,
         }
-        return data

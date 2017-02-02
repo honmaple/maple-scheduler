@@ -6,20 +6,19 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-10 11:10:36 (CST)
-# Last Update:星期四 2017-2-2 16:5:58 (CST)
+# Last Update:星期四 2017-2-2 16:58:41 (CST)
 #          By:
 # Description:
 # **************************************************************************
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers import SchedulerAlreadyRunningError
-from apscheduler.jobstores.base import ConflictingIdError
 
 DEFAULT_CONFIG = {
     'scheduler': BackgroundScheduler(),
     'jobstores': None,
     'executors': None,
     'job_defaults': None,
-    'timezone': None
+    'timezone': 'UTC'
 }
 
 
