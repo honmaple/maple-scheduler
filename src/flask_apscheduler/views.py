@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期四 2017-2-2 17:20:20 (CST)
+# Last Update:星期四 2017-2-16 12:30:49 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -39,12 +39,12 @@ class SchedulerStatusView(MethodView):
 
     def delete(self):
         """shutdown scheduler."""
-        post_data = request.json
-        wait = post_data.pop('wait', True)
-        if wait in [0, '0', 'false', 'False']:
-            wait = False
-        else:
-            wait = True
+        # post_data = request.json
+        # wait = post_data.pop('wait', True)
+        # if wait in [0, '0', 'false', 'False']:
+        #     wait = False
+        # else:
+        wait = True
         scheduler.shutdown(wait)
         serializer = Serializer(scheduler, scheduler=True)
         return HTTPResponse(
