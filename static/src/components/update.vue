@@ -7,7 +7,14 @@
                     <h5 class="modal-title">修改任务</h5>
                 </div>
                 <div class="modal-body" style="padding-bottom:0px;">
-                    {{ schedulerId }}
+                    <form class="form-horizontal" v-for="value,key in scheduler">
+                        <div class="form-group">
+                            <label :for="key" class="col-sm-3 control-label">{{ key }}:</label>
+                            <div class="col-sm-9">
+                                <input class="form-control" :id="key" :placeholder="key" :value="value">
+                            </div>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-default pull-left" data-dismiss="modal" style="width:120px;">Close</button>
@@ -19,7 +26,7 @@
 </template>
 
 <script type="text/javascript">
-    export default {
-        props: ['schedulerId'],
-    }
+ export default {
+     props: ['scheduler'],
+ }
 </script>

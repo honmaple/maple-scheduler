@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update:星期四 2017-2-2 16:58:4 (CST)
+# Last Update:星期四 2017-2-16 22:19:49 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -33,11 +33,9 @@ class Config(object):
     SCHEDULER_TIMEZONE = timezone('Asia/Shanghai')
 
     SCHEDULER_API_ENABLED = True
-    # SCHEDULER_API_RULE = [
-    #     lambda func:True,
-    #     lambda func:True,
-    #     lambda func:True
-    # ]
+    SCHEDULER_API_RULE = [
+        lambda func:True,
+    ]
     JSON_AS_ASCII = False
 
 
