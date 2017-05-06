@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update:星期六 2017-5-6 21:47:24 (CST)
+# Last Update:星期六 2017-5-6 23:0:9 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -42,7 +42,7 @@ app = create_app('config')
 def job():
     data = [{
         'name': 'jobs:{}'.format(f[1].__name__),
-        'doc': f[1].__doc__
+        'doc': f[1].__doc__,
     } for f in getmembers(import_module('jobs'), isfunction)]
     return HTTPResponse(HTTPResponse.NORMAL_STATUS, data=data).to_response()
 

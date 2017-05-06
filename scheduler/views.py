@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期四 2017-2-23 22:50:9 (CST)
+# Last Update:星期六 2017-5-6 23:9:41 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -15,6 +15,7 @@ from flask.views import MethodView
 from apscheduler.jobstores.base import ConflictingIdError, JobLookupError
 from . import scheduler
 from .utils import HTTPResponse, Serializer
+import json
 
 
 class SchedulerStatusView(MethodView):
@@ -117,7 +118,6 @@ class SchedulerListView(MethodView):
 
     def post(self):
         '''
-        :param id:job id
         :param trigger:date or interval or crontab
         :param job:if job is None,the default func is http_request
         '''
@@ -145,6 +145,7 @@ class SchedulerListView(MethodView):
 class SchedulerView(MethodView):
     def get(self, pk):
         job = scheduler.get_job(pk)
+        print(dir(job))
         if not job:
             msg = 'Job ID %s not found' % pk
             return HTTPResponse(

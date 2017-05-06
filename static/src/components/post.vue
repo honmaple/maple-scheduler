@@ -50,34 +50,24 @@
      name:'',
      func:'',
      kwargs:'',
-     run_date:''
+     run_date:'',
+     trigger:'date'
  }
  var intervalForm = {
      name:'',
      func:'',
      kwargs:'',
-     interval:'',
+     seconds:'',
      start_date:'',
-     end_date:''
+     end_date:'',
+     trigger:'interval'
  }
- /* var dateForm = {
-  *     name:'任务名',
-  *     kwargs:'参数',
-  *     date:'运行时间'
-  * }
-  * var intervalForm = {
-  *     name:'任务名',
-  *     kwargs:'参数',
-  *     interval:'间隔时间',
-  *     start_date:'开始运行时间',
-  *     end_date:'结束运行时间'
-  * }*/
  export default {
      data() {
          return {
-             selected:'date',
              form:dateForm,
-             jobs:[]
+             jobs:[],
+             selected:'date'
          }
      },
      methods: {
@@ -89,15 +79,27 @@
              })
          },
          post: function() {
+             console.log(this.form)
+             if (this.form.trigger == 'interval') {
+                 this.form.seconds = parseInt(this.form.seconds)
+                 if (!this.form.start_date) {
+                     delete this.form.start_date
+                 }
+                 if (!this.form.end_date) {
+                     delete this.form.end_date
+                 }
+             }
              this.$parent.postItem(this.form)
          }
      },
      watch: {
-         selected: function () {
-             if(this.selected == 'interval'){
-                 this.form = intervalForm
-             }else {
+         selected: function() {
+             if(this.selected == 'date') {
                  this.form = dateForm
+                 this.form.trigger = 'date'
+             } else {
+                 this.form = intervalForm
+                 this.form.trigger = 'interval'
              }
          }
      }

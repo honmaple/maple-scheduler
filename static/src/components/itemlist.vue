@@ -122,7 +122,11 @@
          },
          postItem: function(form) {
              scheduler.post(form).then((response) => {
-                 this.items.push(response.data.data)
+                 if (response.data.status == '200') {
+                     this.items.push(response.data.data)
+                 }else {
+                     alert(response.data.description)
+                 }
              }).catch(function(response) {
                  console.log(response)
              })
