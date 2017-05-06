@@ -6,9 +6,14 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 14:28:16 (CST)
-# Last Update:星期四 2017-2-2 16:8:25 (CST)
+# Last Update:星期六 2017-5-6 21:28:19 (CST)
 #          By:
 # Description:
 # **************************************************************************
-def vvv():
+def scheduler_vvv():
+    '''输出hello world'''
     print('hello world')
+
+def scheduler_kkk():
+    '''输出hello world'''
+    print('helloorld')

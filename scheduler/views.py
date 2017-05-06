@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期四 2017-2-16 12:30:49 (CST)
+# Last Update:星期四 2017-2-23 22:50:9 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -122,6 +122,7 @@ class SchedulerListView(MethodView):
         :param job:if job is None,the default func is http_request
         '''
         post_data = request.json
+        print(post_data)
         job = post_data.pop('job', None)
         func = post_data.get('func', None)
         if func is not None and not scheduler.func_rule(func):
