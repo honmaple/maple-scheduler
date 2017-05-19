@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-11 16:05:44 (CST)
-# Last Update:星期六 2017-5-6 23:9:41 (CST)
+# Last Update:星期五 2017-5-19 21:8:36 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -15,7 +15,7 @@ from flask.views import MethodView
 from apscheduler.jobstores.base import ConflictingIdError, JobLookupError
 from . import scheduler
 from .utils import HTTPResponse, Serializer
-import json
+from json import loads
 
 
 class SchedulerStatusView(MethodView):
@@ -40,13 +40,8 @@ class SchedulerStatusView(MethodView):
 
     def delete(self):
         """shutdown scheduler."""
-        # post_data = request.json
-        # wait = post_data.pop('wait', True)
-        # if wait in [0, '0', 'false', 'False']:
-        #     wait = False
-        # else:
-        wait = True
-        scheduler.shutdown(wait)
+        if scheduler.running:
+            scheduler.shutdown()
         serializer = Serializer(scheduler, scheduler=True)
         return HTTPResponse(
             HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
@@ -111,8 +106,10 @@ class JobExecuteView(MethodView):
 
 class SchedulerListView(MethodView):
     def get(self):
+        query_dict = request.args.to_dict()
+        trigger = query_dict.pop('trigger', None)
         jobs = scheduler.get_jobs()
-        serializer = Serializer(jobs)
+        serializer = Serializer(jobs, trigger=trigger)
         return HTTPResponse(
             HTTPResponse.NORMAL_STATUS, data=serializer.data).to_response()
 
@@ -122,9 +119,11 @@ class SchedulerListView(MethodView):
         :param job:if job is None,the default func is http_request
         '''
         post_data = request.json
-        print(post_data)
-        job = post_data.pop('job', None)
         func = post_data.get('func', None)
+        trigger = post_data.get('trigger')
+        kwargs = post_data.get('kwargs')
+        if trigger == 'interval' and kwargs:
+            post_data['kwargs'] = loads(kwargs)
         if func is not None and not scheduler.func_rule(func):
             return HTTPResponse(HTTPResponse.FORBIDDEN).to_response()
         try:
@@ -140,6 +139,27 @@ class SchedulerListView(MethodView):
             msg = str(e)
             return HTTPResponse(
                 HTTPResponse.OTHER_ERROR, description=msg).to_response()
+
+    def put(self):
+        post_data = request.json
+        job_ids = post_data.pop('jobs', [])
+        success_ids = []
+        for pk in job_ids:
+            try:
+                scheduler.remove_job(pk)
+                msg = 'Job ID %s delete success' % pk
+                success_ids.append(pk)
+            except JobLookupError:
+                msg = 'Job ID %s not found' % pk
+                return HTTPResponse(
+                    HTTPResponse.JOB_NOT_FOUND, description=msg).to_response()
+            except Exception as e:
+                msg = str(e)
+                return HTTPResponse(
+                    HTTPResponse.OTHER_ERROR, description=msg).to_response()
+        msg = '{} delete success!'.format(','.join(success_ids))
+        return HTTPResponse(
+            HTTPResponse.NORMAL_STATUS, description=msg).to_response()
 
 
 class SchedulerView(MethodView):

@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 14:28:16 (CST)
-# Last Update:星期六 2017-5-6 23:1:13 (CST)
+# Last Update:星期二 2017-5-9 10:41:47 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -24,5 +24,8 @@ def scheduler_kkk():
 
 
 def scheduler_time(a):
-    '''输出时间,参数a'''
+    '''
+    输出时间,参数a
+    asasdsda
+    '''
     print('{}{}'.format(a, time()))

@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 12:24:45 (CST)
-# Last Update:星期四 2017-2-2 16:53:41 (CST)
+# Last Update:星期五 2017-5-19 20:0:15 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -58,9 +58,10 @@ class HTTPResponse(object):
 
 
 class Serializer(object):
-    def __init__(self, instance, scheduler=False):
+    def __init__(self, instance, scheduler=False, trigger=None):
         self.instance = instance
         self.scheduler = scheduler
+        self.trigger = trigger
 
     @property
     def data(self):
@@ -69,7 +70,18 @@ class Serializer(object):
         return self._serializer(self.instance)
 
     def _serializerlist(self, instances):
-        return [self._serializer(i) for i in instances]
+        results = []
+        for instance in instances:
+            result = {}
+            if self.trigger and self.trigger in ['date', 'interval']:
+                trigger = 'run_date' if self.trigger == 'date' else 'interval'
+                if hasattr(instance.trigger, trigger):
+                    result = self._serializer(instance)
+            else:
+                result = self._serializer(instance)
+            if result:
+                results.append(result)
+        return results
 
     def _serializer(self, instance):
         if self.scheduler:
@@ -78,7 +90,7 @@ class Serializer(object):
                 'executors': instance.executors,
                 'job_defaults': instance.job_defaults
             }
-        return {
+        result = {
             'args': instance.args,
             'coalesce': instance.coalesce,
             'executor': instance.executor,
@@ -92,3 +104,18 @@ class Serializer(object):
             'next_run_time': instance.next_run_time,
             'pending': instance.pending,
         }
+        trigger = instance.trigger
+        t = {}
+        if hasattr(trigger, 'interval'):
+            t = {
+                'trigger': 'interval',
+                'end_date': trigger.end_date,
+                'start_date': trigger.start_date,
+                'interval': trigger.interval.seconds,
+            }
+        elif hasattr(trigger, 'run_date'):
+            t = {
+                'trigger': 'date',
+            }
+        result.update(**t)
+        return result

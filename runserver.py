@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update:星期六 2017-5-6 23:0:9 (CST)
+# Last Update:星期二 2017-5-9 18:8:36 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -57,7 +57,8 @@ def hello():
 
 from apscheduler.jobstores.base import ConflictingIdError
 try:
-    a = scheduler.add_job(hello, trigger='interval', seconds=10, id='3')
+    # a = scheduler.add_job(hello, trigger='interval', seconds=10, id='3')
+    a = scheduler.add_job(hello, run_date='2017-10-10 10:10', id='34')
 except ConflictingIdError as e:
     print(e)
 

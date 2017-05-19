@@ -16,6 +16,9 @@ export var scheduler = {
       params:params
     });
   },
+  deletelist: function(data) {
+    return axios.put(api.scheduler,data);
+  },
   get: function(pk) {
     return axios.get(api.scheduler + '/' + pk);
   },

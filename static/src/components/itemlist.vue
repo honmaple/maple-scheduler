@@ -5,23 +5,13 @@
         <li><a href="#">定时任务管理</a></li>
         <li class="active">任务列表</li>
       </ol>
+      <status-template></status-template>
       <div>
         <div class="pull-right">
-          <form class="form-inline">
-            <div class="form-group">
-              <input type="text" class="form-control input-sm" id="start" placeholder="定时任务ID" style="border-radius:3px 0 0 3px">
-              <!-- <button type="button" class="btn btn-sm btn-primary pull-right" style="width:100px;border-radius:0 3px 3px 0;">搜索</button> -->
-            </div>
-          </form>
-        </div>
-        <status-template></status-template>
-      </div>
-      <div>
-        <div class="pull-right">
-          <select class="form-control input-sm pull-right" style="padding:2px;">
-            <option>全部</option>
-            <option>定时任务</option>
-            <option>间隔时间任务</option>
+          <select class="form-control input-sm pull-right" style="padding:2px;" v-model="trigger_selected">
+            <option value="all">全部</option>
+            <option value="date">定时任务</option>
+            <option value="interval">间隔时间任务</option>
           </select>
         </div>
         <div class="text-left">
@@ -31,7 +21,7 @@
           <template v-else>
             <button type="button" class="btn btn-sm btn-primary opeara" v-on:click="selectAll">全选</button>
           </template>
-          <button type="button" class="btn btn-sm btn-danger opeara">删除选中</button>
+          <button type="button" class="btn btn-sm btn-danger opeara" v-on:click="deleteItemList">删除选中</button>
           <button type="button" class="btn btn-sm btn-success opeara"  @click="_postItem">新建任务</button>
         </div>
       </div>
@@ -50,14 +40,22 @@
             <td>{{ item.pending }}</td>
             <td style="width:240px;">
               <div class="btn-group btn-group-justified" role="group" style="margin-bottom:7px;">
-                <a class="btn btn-sm btn-warning opeara-item" v-on:click="getItem(item.id)">查看</a>
-                <a class="btn btn-sm btn-success opeara-item" v-on:click="_updateItem(item.id)">修改</a>
-                <a class="btn btn-sm btn-danger opeara-item" v-on:click="_deleteItem(item.id)">删除</a>
+                <a class="btn btn-sm btn-warning opeara-item" 
+                   @click="getItem(item.id)">查看</a>
+                <a class="btn btn-sm btn-success opeara-item" 
+                   @click="_updateItem(item.id)">修改</a>
+                <a class="btn btn-sm btn-danger opeara-item"
+                   @click="_deleteItem(item.id)">删除</a>
               </div>
               <div class="btn-group btn-group-justified" role="group">
-                <a class="btn btn-sm btn-warning opeara-item" @click="pauseItem(item.id)">暂停</a>
-                <a class="btn btn-sm btn-success opeara-item" @click="resumeItem(item.id)">恢复</a>
-                <a class="btn btn-sm btn-danger opeara-item" @click="executeItem(item.id)">执行</a>
+                <a class="btn btn-sm btn-success opeara-item"
+                   @click="executeItem(item)">执行</a>
+                <a class="btn btn-sm btn-danger opeara-item"
+                   @click="pauseItem(item)"
+                   v-if="item.next_run_time">暂停</a>
+                <a class="btn btn-sm btn-warning opeara-item"
+                   @click="resumeItem(item)"
+                   v-else>恢复</a>
               </div>
             </td>
           </tr>
@@ -93,7 +91,8 @@
              pageinfo: {},
              checked:[],
              ischecked:false,
-             operaId:null
+             operaId:null,
+             trigger_selected:'all',
          }
      },
      created() {
@@ -101,9 +100,20 @@
      },
      methods: {
          getItemList: function() {
-             scheduler.getlist({}).then((response) => {
+             var params = {
+                 'trigger':this.trigger_selected
+             }
+             scheduler.getlist(params).then((response) => {
                  this.items = response.data.data
                  this.pageinfo = response.data.pageinfo
+             }).catch(function(response) {
+                 console.log(response)
+             })
+         },
+         deleteItemList: function() {
+             console.log(this.checked)
+             scheduler.deletelist({jobs:this.checked}).then((response) => {
+                 this.getItemList()
              }).catch(function(response) {
                  console.log(response)
              })
@@ -138,8 +148,20 @@
              scheduler.get(pk).then((response) => {
                  var item = response.data.data
                  var form = this.$refs.post.form
+                 if (item.trigger == 'date') {
+                     this.$refs.post.selected = 'date'
+                     form.trigger = 'date'
+                     form.run_date = item.run_date
+                 }else {
+                     this.$refs.post.selected = 'interval'
+                     form.trigger = 'interval'
+                     form.seconds = item.interval
+                     form.start_date = item.start_date
+                     form.end_date = item.end_date
+                 }
                  form.name = item.name
-                 /* form.func = item.func*/
+                 form.func = item.func_ref
+                 form.kwargs = item.kwargs
              }).catch(function(response) {
                  console.log(response)
              })
@@ -161,21 +183,26 @@
              })
              $('#delete-scheduler').modal('hide')
          },
-         pauseItem: function(pk) {
+         pauseItem: function(item) {
+             var pk = item.id
              scheduler.pause(pk).then((response) => {
-                 console.log(response)
+                 item.next_run_time = null
              }).catch(function(response) {
                  console.log(response)
              })
          },
-         resumeItem: function(pk) {
+         resumeItem: function(item) {
+             var pk = item.id
              scheduler.resume(pk).then((response) => {
-                 console.log(response)
+                 if (response.data.status == '200') {
+                     item.next_run_time = response.data.data.next_run_time
+                 }
              }).catch(function(response) {
                  console.log(response)
              })
          },
-         executeItem: function(pk) {
+         executeItem: function(item) {
+             var pk = item.id
              scheduler.execute(pk).then((response) => {
                  console.log(response)
              }).catch(function(response) {
@@ -203,6 +230,9 @@
              }else {
                  this.checked = []
              }
+         },
+         trigger_selected: function () {
+             this.getItemList()
          }
      }
  }

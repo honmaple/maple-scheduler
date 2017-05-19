@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: xiyang0807@gmail.com
 # Created: 2016-11-10 11:10:36 (CST)
-# Last Update:星期四 2017-2-2 16:58:41 (CST)
+# Last Update:星期五 2017-5-19 21:6:44 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -90,6 +90,9 @@ class APScheduler(object):
 
     def shutdown(self, wait=True):
         self.scheduler.shutdown(wait)
+
+    def get_jobs(self, trigger=None):
+        return self.scheduler.get_jobs()
 
     def run_job(self, id, jobstore=None):
         job = self.scheduler.get_job(id, jobstore)
