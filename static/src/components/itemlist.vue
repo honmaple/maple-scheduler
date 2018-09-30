@@ -1,238 +1,199 @@
 <template>
-  <div class="scheduler-list">
-    <div class="container-fluid">
-      <ol class="breadcrumb text-left">
-        <li><a href="#">定时任务管理</a></li>
-        <li class="active">任务列表</li>
-      </ol>
-      <status-template></status-template>
-      <div>
-        <div class="pull-right">
-          <select class="form-control input-sm pull-right" style="padding:2px;" v-model="trigger_selected">
-            <option value="all">全部</option>
-            <option value="date">定时任务</option>
-            <option value="interval">间隔时间任务</option>
-          </select>
-        </div>
-        <div class="text-left">
-          <template v-if="ischecked">
-            <button type="button" class="btn btn-sm btn-warning opeara" v-on:click="selectAll">取消全选</button>
-          </template>
-          <template v-else>
-            <button type="button" class="btn btn-sm btn-primary opeara" v-on:click="selectAll">全选</button>
-          </template>
-          <button type="button" class="btn btn-sm btn-danger opeara" v-on:click="deleteItemList">删除选中</button>
-          <button type="button" class="btn btn-sm btn-success opeara"  @click="_postItem">新建任务</button>
-        </div>
+  <div class="container-fluid">
+    <div>
+      <div class="pull-right">
+        <select class="form-control input-sm pull-right" style="padding:2px;" v-model="trigger">
+          <option value="all">全部</option>
+          <option value="date">定时任务</option>
+          <option value="interval">间隔时间任务</option>
+        </select>
       </div>
-      <hr/>
-      <table class="table table-hover table-striped table-bordered">
-        <thead>
-          <tr>
-            <th v-for="th in table.th">{{ th }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items">
-            <td style="width:45px;"><input type="checkbox" :value="item.id" v-model="checked"></td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.next_run_time }}</td>
-            <td>{{ item.pending }}</td>
-            <td style="width:240px;">
-              <div class="btn-group btn-group-justified" role="group" style="margin-bottom:7px;">
-                <a class="btn btn-sm btn-warning opeara-item" 
-                   @click="getItem(item.id)">查看</a>
-                <a class="btn btn-sm btn-success opeara-item" 
-                   @click="_updateItem(item.id)">修改</a>
-                <a class="btn btn-sm btn-danger opeara-item"
-                   @click="_deleteItem(item.id)">删除</a>
-              </div>
-              <div class="btn-group btn-group-justified" role="group">
-                <a class="btn btn-sm btn-success opeara-item"
-                   @click="executeItem(item)">执行</a>
-                <a class="btn btn-sm btn-danger opeara-item"
-                   @click="pauseItem(item)"
-                   v-if="item.next_run_time">暂停</a>
-                <a class="btn btn-sm btn-warning opeara-item"
-                   @click="resumeItem(item)"
-                   v-else>恢复</a>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <span class="text-center notfound" v-if="items.length == 0">
-        暂无定时任务
-      </span>
+      <div class="text-left">
+        <button type="button" class="btn btn-sm btn-success" title="关闭" v-if="running" v-on:click="stop">状态: 正在运行···</button>
+        <button type="button" class="btn btn-sm btn-warning" title="启动" v-else v-on:click="start">状态: 停止···</button>
+        <button type="button" class="btn btn-sm btn-danger" v-on:click="deleteSelected" v-if="checked.length > 0">删除选中</button>
+        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#create-job">新建任务</button>
+      </div>
     </div>
-    <post-template ref="post"></post-template>
-    <get-template ref="get"></get-template>
-    <delete-template ref="delete"></delete-template>
+    <hr/>
+    <table class="table table-hover table-striped table-bordered">
+      <thead>
+        <tr>
+          <th><input type="checkbox" v-model="selectAll"></th>
+          <th v-for="th in table.th">{{ th }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, index) in items">
+          <td style="width:45px;"><input type="checkbox" :value="item.id" v-model="checked"></td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.next_run_time }}</td>
+          <td>{{ item.pending }}</td>
+          <td style="width:240px;">
+            <div class="btn-group btn-group-justified" role="group" style="margin-bottom:7px;">
+              <a class="btn btn-sm btn-success opeara-item"
+                 @click="edit(index, item.id)">修改</a>
+              <a class="btn btn-sm btn-danger opeara-item"
+                 @click="_remove(index, item.id)">删除</a>
+            </div>
+            <div class="btn-group btn-group-justified" role="group">
+              <a class="btn btn-sm btn-success opeara-item"
+                 @click="execute(item)">执行</a>
+              <a class="btn btn-sm btn-danger opeara-item"
+                 @click="pause(item)"
+                 v-if="item.next_run_time">暂停</a>
+              <a class="btn btn-sm btn-warning opeara-item"
+                 @click="resume(item)"
+                 v-else>恢复</a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <span class="text-center notfound" v-if="items.length == 0">
+      暂无定时任务
+    </span>
+    <create-template ref="'create'"></create-template>
+    <delete-template ref="'delete'"></delete-template>
   </div>
 </template>
 
 <script>
  import {lazyload} from 'globals'
- import {scheduler} from 'service'
+ import sche from 'api'
 
  export default {
      components: {
-         'post-template':lazyload('post'),
+         'create-template':lazyload('create'),
          'delete-template':lazyload('delete'),
-         'get-template':lazyload('item'),
-         'status-template':lazyload('status'),
      },
      data() {
          return {
              table: {
-                 'th': ['选择', '任务名称', '下次运行时间', '运行状态', '操作']
+                 'th': ['任务名称', '下次运行时间', '运行状态', '操作']
              },
              items: [],
              pageinfo: {},
              checked:[],
              ischecked:false,
              operaId:null,
-             trigger_selected:'all',
+             trigger:'all',
+             running: false,
+             jobs:[],
+             selectAll:[]
          }
      },
      created() {
-         this.getItemList()
+         sche.status().then((response) => {
+             this.running = response.data.data.running
+             this.jobs = response.data.data.funcs
+             this.$refs.create.jobs = this.jobs
+         }).catch(error => {
+             console.log(error)
+         })
+         this.select()
      },
      methods: {
-         getItemList: function() {
+         select: function() {
              var params = {
-                 'trigger':this.trigger_selected
+                 'trigger':this.trigger
              }
-             scheduler.getlist(params).then((response) => {
+             sche.job.select(params).then((response) => {
                  this.items = response.data.data
-                 this.pageinfo = response.data.pageinfo
-             }).catch(function(response) {
-                 console.log(response)
+             }).catch(error => {
+                 console.log(error)
              })
          },
-         deleteItemList: function() {
-             console.log(this.checked)
-             scheduler.deletelist({jobs:this.checked}).then((response) => {
-                 this.getItemList()
-             }).catch(function(response) {
-                 console.log(response)
+         create: function(item) {
+             sche.job.create(item).then(response => {
+                 this.items.push(response.data.data)
+             }).catch(error => {
+                 console.log(error)
              })
+             $('#create-job').modal('hide')
          },
-         getItem: function(pk) {
-             scheduler.get(pk).then((response) => {
-                 this.$refs.get.item = response.data.data
-             }).catch(function(response) {
-                 console.log(response)
+         edit: function(index,pk) {
+             this.$refs.create.item = this.items[index];
+             $('#create-job').modal('toggle')
+         },
+         update: function(item) {
+             sche.job.update(this.item.id, item).then(response => {
+                 this.select()
+             }).catch(error => {
+                 console.log(error)
              })
-             $('#get-scheduler').modal('toggle')
+             $('#create-job').modal('toggle')
          },
-         _postItem: function() {
-             this.$refs.post.getJobList()
-             $('#post-scheduler').modal('toggle')
-         },
-         postItem: function(form) {
-             scheduler.post(form).then((response) => {
-                 if (response.data.status == '200') {
-                     this.items.push(response.data.data)
-                 }else {
-                     alert(response.data.description)
-                 }
-             }).catch(function(response) {
-                 console.log(response)
-             })
-             $('#post-scheduler').modal('hide')
-         },
-         _updateItem: function(pk) {
+         _remove: function(index, pk) {
              this.operaId = pk
-             this.$refs.post.getJobList()
-             scheduler.get(pk).then((response) => {
-                 var item = response.data.data
-                 var form = this.$refs.post.form
-                 if (item.trigger == 'date') {
-                     this.$refs.post.selected = 'date'
-                     form.trigger = 'date'
-                     form.run_date = item.run_date
-                 }else {
-                     this.$refs.post.selected = 'interval'
-                     form.trigger = 'interval'
-                     form.seconds = item.interval
-                     form.start_date = item.start_date
-                     form.end_date = item.end_date
-                 }
-                 form.name = item.name
-                 form.func = item.func_ref
-                 form.kwargs = item.kwargs
-             }).catch(function(response) {
-                 console.log(response)
+             $('#delete-job').modal('toggle')
+         },
+         remove: function() {
+             sche.job.delete(this.operaId).then(response => {
+                 this.select()
+             }).catch(error => {
+                 console.log(error)
              })
-             $('#post-scheduler').modal('toggle')
+             $('#delete-job').modal('hide')
          },
-         updateItem: function(schedulerId) {
-             this.schedulerId = schedulerId
-             $('#update-scheduler').modal('toggle')
-         },
-         _deleteItem: function(pk) {
-             this.operaId = pk
-             $('#delete-scheduler').modal('toggle')
-         },
-         deleteItem: function() {
-             scheduler.delete(this.operaId).then((response) => {
-                 this.getItemList()
-             }).catch(function(response) {
-                 console.log(response)
-             })
-             $('#delete-scheduler').modal('hide')
-         },
-         pauseItem: function(item) {
-             var pk = item.id
-             scheduler.pause(pk).then((response) => {
+         pause: function(item) {
+             sche.job.pause(item.id).then(response => {
                  item.next_run_time = null
-             }).catch(function(response) {
-                 console.log(response)
+             }).catch(error => {
+                 console.log(error)
              })
          },
-         resumeItem: function(item) {
-             var pk = item.id
-             scheduler.resume(pk).then((response) => {
-                 if (response.data.status == '200') {
-                     item.next_run_time = response.data.data.next_run_time
-                 }
-             }).catch(function(response) {
-                 console.log(response)
+         resume: function(item) {
+             sche.job.resume(item.id).then(response => {
+                 item.next_run_time = response.data.data.next_run_time
+             }).catch(error => {
+                 console.log(error)
              })
          },
-         executeItem: function(item) {
-             var pk = item.id
-             scheduler.execute(pk).then((response) => {
+         execute: function(item) {
+             sche.job.execute(item.id).then(response => {
                  console.log(response)
-             }).catch(function(response) {
-                 console.log(response)
+             }).catch(error => {
+                 console.log(error)
              })
          },
-         selectAll: function(event) {
-             this.ischecked = !this.ischecked
+         deleteSelected: function() {
+             sche.job.deletelist({jobs:this.checked}).then(response => {
+                 this.items = this.items.filter(item=> {
+                     return response.data.data.indexOf(item.id) == -1;
+                 })
+             }).catch(error => {
+                 console.log(error)
+             })
          },
-         deleteSelected: function(event) {
-             alert('s')
+         start: function() {
+             sche.start().then((response) => {
+                 this.running = response.data.data.running
+             }).catch(error => {
+                 console.log(error)
+             })
+             this.select()
+         },
+         stop: function() {
+             sche.stop().then((response) => {
+                 this.running = response.data.data.running
+             }).catch(error => {
+                 console.log(error)
+             })
          },
      },
      watch: {
-         checked: function () {
-             if (this.checked.length == this.items.length) {
-                 this.ischecked = true
-             }
+         trigger: function () {
+             this.select()
          },
-         ischecked: function () {
-             if (this.ischecked) {
-                 this.checked = this.items.map(function(item) {
+         selectAll: function() {
+             if (this.selectAll.length > 0) {
+                 this.checked = this.items.map(item => {
                      return item.id
                  })
-             }else {
+             }else{
                  this.checked = []
              }
-         },
-         trigger_selected: function () {
-             this.getItemList()
          }
      }
  }
@@ -242,7 +203,7 @@
  .opeara {
      width: 85px;
  }
- 
+
  .opeara-item {
      width: 56px;
  }
@@ -250,7 +211,7 @@
     background-color: #f5f5f5;
     border-radius: 4px;
     } */
- 
+
  .breadcrumb {
      background-color: #fff;
  }

@@ -4,13 +4,13 @@
 # Copyright © 2017 jianglin
 # File Name: jobs.py
 # Author: jianglin
-# Email: xiyang0807@gmail.com
+# Email: mail@honmaple.com
 # Created: 2017-02-02 14:28:16 (CST)
-# Last Update:星期二 2017-5-9 10:41:47 (CST)
+# Last Update: Sunday 2018-09-30 17:50:05 (CST)
 #          By:
 # Description:
 # **************************************************************************
-from time import time
+from time import time, sleep
 
 
 def scheduler_vvv():
@@ -29,3 +29,12 @@ def scheduler_time(a):
     asasdsda
     '''
     print('{}{}'.format(a, time()))
+
+
+def scheduler_vvvv():
+    '''
+    sleep 20s
+    '''
+    print('sleep start')
+    sleep(10)
+    print('sleep end')

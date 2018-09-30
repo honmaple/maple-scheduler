@@ -4,63 +4,100 @@
 # Copyright © 2017 jianglin
 # File Name: utils.py
 # Author: jianglin
-# Email: xiyang0807@gmail.com
+# Email: mail@honmaple.com
 # Created: 2017-02-02 12:24:45 (CST)
-# Last Update:星期五 2017-5-19 20:0:15 (CST)
+# Last Update: Sunday 2018-09-30 17:50:04 (CST)
 #          By:
 # Description:
 # **************************************************************************
-from flask import jsonify
+from flask import make_response, jsonify
 
 
 class HTTPResponse(object):
-    NORMAL_STATUS = '200'
-    JOB_ALREADY_EXISTS = '600'
-    JOB_NOT_FOUND = '601'
+    OK = 200
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    FORBIDDEN = 403
+    NOT_FOUND = 404
+    SERVER_ERROR = 500
 
-    FORBIDDEN = '403'
-    OTHER_ERROR = '500'
-
-    STATUS_DESCRIPTION = {
-        NORMAL_STATUS: 'normal',
-        FORBIDDEN: 'You have no permission!',
-        JOB_ALREADY_EXISTS: 'Job already exists.',
-        JOB_NOT_FOUND: 'Job not found',
-        OTHER_ERROR: 'other error'
-    }
-
-    def __init__(self,
-                 status='200',
-                 message='',
-                 data=None,
-                 description='',
-                 pageinfo=None):
-        self.status = status
-        self.message = message or self.STATUS_DESCRIPTION.get(status)
+    def __init__(self, status_code=200, message="", data=None, pageinfo=None):
+        self.status_code = status_code
+        self.message = message
         self.data = data
-        self.description = description
         self.pageinfo = pageinfo
 
     def to_dict(self):
-        response = {
-            'status': self.status,
-            'message': self.message,
-            'data': self.data,
-            'description': self.description,
+        return {
+            "status_code": self.status_code,
+            "message": self.message,
+            "data": self.data,
+            "pageinfo": self.pageinfo
         }
-        if self.pageinfo is not None:
-            response.update(pageinfo=self.pageinfo.as_dict())
-        return response
 
     def to_response(self):
-        response = self.to_dict()
-        return jsonify(response)
+        resp = dict(message=self.message)
+        if self.data is not None:
+            resp.update(data=self.data)
+        if self.pageinfo is not None:
+            resp.update(pageinfo=self.pageinfo)
+        return make_response(jsonify(**resp), self.status_code)
+
+
+class HTTP(object):
+    @classmethod
+    def OK(cls, message="ok", data=None, pageinfo=None):
+        return HTTPResponse(
+            HTTPResponse.OK,
+            message,
+            data,
+            pageinfo,
+        ).to_response()
+
+    @classmethod
+    def BAD_REQUEST(cls, message="bad request", data=None):
+        return HTTPResponse(
+            HTTPResponse.BAD_REQUEST,
+            message,
+            data,
+        ).to_response()
+
+    @classmethod
+    def UNAUTHORIZED(cls, message="unauthorized", data=None):
+        return HTTPResponse(
+            HTTPResponse.UNAUTHORIZED,
+            message,
+            data,
+        ).to_response()
+
+    @classmethod
+    def FORBIDDEN(cls, message="forbidden", data=None):
+        return HTTPResponse(
+            HTTPResponse.FORBIDDEN,
+            message,
+            data,
+        ).to_response()
+
+    @classmethod
+    def NOT_FOUND(cls, message="not found", data=None):
+        return HTTPResponse(
+            HTTPResponse.NOT_FOUND,
+            message,
+            data,
+        ).to_response()
+
+    @classmethod
+    def SERVER_ERROR(cls, message="internal server error", data=None):
+        return HTTPResponse(
+            HTTPResponse.SERVER_ERROR,
+            message,
+            data,
+        ).to_response()
 
 
 class Serializer(object):
-    def __init__(self, instance, scheduler=False, trigger=None):
+    def __init__(self, instance, trigger=None):
         self.instance = instance
-        self.scheduler = scheduler
         self.trigger = trigger
 
     @property
@@ -84,17 +121,12 @@ class Serializer(object):
         return results
 
     def _serializer(self, instance):
-        if self.scheduler:
-            return {
-                'running': instance.running,
-                'executors': instance.executors,
-                'job_defaults': instance.job_defaults
-            }
         result = {
             'args': instance.args,
             'coalesce': instance.coalesce,
             'executor': instance.executor,
-            'func': instance.func.__doc__,
+            'func': instance.func_ref,
+            # 'func': instance.func.__doc__,
             'func_ref': instance.func_ref,
             'id': instance.id,
             'kwargs': instance.kwargs,
