@@ -1,19 +1,58 @@
-* flask-apscheduler
+* mape-scheduler
 
   [[https://docs.python.org/3/whatsnew/3.6.html][https://img.shields.io/badge/python-3.6-brightgreen.svg]]
   [[LICENSE][https://img.shields.io/badge/license-BSD-blue.svg]]
   
-** Configure
 
-   |------------------------+----------------------------------------------------------------------|
-   | SCHEDULER              | apscheduler jobstores,default *BackgroundScheduler()*                |
-   | SCHEDULER_JOBSTORES    | apscheduler jobstores,default *None*                                 |
-   | SCHEDULER_EXECUTORS    | apscheduler executors,default *None*                                 |
-   | SCHEDULER_JOB_DEFAULTS | apscheduler job_defaults,default *None*                              |
-   | SCHEDULER_TIMEZONE     | apscheduler timezone,default *UTC*                                   |
-   | SCHEDULER_API_ENABLED  | True or False,if True then register restful api,default *True*       |
-   | SCHEDULER_API_RULE     | When add new job,it will check whether func is right,default *False* |
-   |------------------------+----------------------------------------------------------------------|
+  [[https://raw.githubusercontent.com/honmaple/maple-scheduler/master/example.png]]
+  
+** Quickstart
+   #+BEGIN_SRC python
+     from flask import Flask
+     from sche import sche, api
+
+     app = Flask(__name__)
+     app.config.from_object("config")
+     sche.init_app(app, start=True)
+     api.init_app(app)
+
+     if __name__ == '__main__':
+         app.run()
+   #+END_SRC
+  
+** Configure
+   example:
+
+   #+BEGIN_SRC python
+     from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+     from pytz import timezone
+
+     APSCHEDULER = {
+         'jobstores': {
+             'default': SQLAlchemyJobStore(url='sqlite:///test_scheduler.db')
+         },
+         'executors': {
+             'default': {
+                 'type': 'threadpool',
+                 'max_workers': 20
+             }
+         },
+         'job_defaults': {
+             'coalesce': False,
+             'max_instances': 3
+         },
+         'timezone': timezone('Asia/Shanghai'),
+         'funcs': "jobs"
+     }
+   #+END_SRC
+
+   |--------------+--------------------------------------------|
+   | jobstores    | apscheduler jobstores,default *None*       |
+   | executors    | apscheduler executors,default *None*       |
+   | job_defaults | apscheduler job_defaults,default *None*    |
+   | timezone     | apscheduler timezone,default *UTC*         |
+   | funcs        | str or list, tasks where find,default *[]* |
+   |--------------+--------------------------------------------|
    
 ** Some Api
    - */scheduler*
@@ -57,6 +96,5 @@
        
 ** Example
    #+BEGIN_SRC shell
-     cd src
      python runserver
    #+END_SRC

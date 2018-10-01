@@ -6,7 +6,7 @@
 # Author: jianglin
 # Email: mail@honmaple.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update: Sunday 2018-09-30 17:58:54 (CST)
+# Last Update: Monday 2018-10-01 10:29:52 (CST)
 #          By:
 # Description:
 # **************************************************************************
@@ -17,7 +17,32 @@ from flask import current_app
 from flask.cli import FlaskGroup, run_command
 from werkzeug.contrib.fixers import ProxyFix
 from code import interact
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from pytz import timezone
 import sys
+
+
+class config:
+    DEBUG = True
+    JSON_AS_ASCII = False
+
+    APSCHEDULER = {
+        'jobstores': {
+            'default': SQLAlchemyJobStore(url='sqlite:///test_scheduler.db')
+        },
+        'executors': {
+            'default': {
+                'type': 'threadpool',
+                'max_workers': 20
+            }
+        },
+        'job_defaults': {
+            'coalesce': False,
+            'max_instances': 3
+        },
+        'timezone': timezone('Asia/Shanghai'),
+        'funcs': "jobs"
+    }
 
 
 def create_app(config):
@@ -29,7 +54,7 @@ def create_app(config):
     return app
 
 
-app = create_app("config")
+app = create_app(config)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 cli = FlaskGroup(add_default_commands=False, create_app=lambda r: app)
