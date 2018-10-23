@@ -6,20 +6,20 @@
 # Author: jianglin
 # Email: mail@honmaple.com
 # Created: 2017-02-02 09:18:53 (CST)
-# Last Update: Monday 2018-10-01 10:29:52 (CST)
+# Last Update: Sunday 2018-10-07 18:49:25 (CST)
 #          By:
 # Description:
 # **************************************************************************
 from sche import sche, api
-from flask import Flask
-from flask_cors import CORS
-from flask import current_app
+from flask import Flask, current_app, send_from_directory
 from flask.cli import FlaskGroup, run_command
+from flask_cors import CORS
 from werkzeug.contrib.fixers import ProxyFix
 from code import interact
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from pytz import timezone
 import sys
+import os
 
 
 class config:
@@ -56,6 +56,17 @@ def create_app(config):
 
 app = create_app(config)
 app.wsgi_app = ProxyFix(app.wsgi_app)
+
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'dist/index.html')
+
+
+@app.route('/static/js/<path:path>')
+def static_file(path):
+    return send_from_directory(app.static_folder, "dist/static/js/" + path)
+
 
 cli = FlaskGroup(add_default_commands=False, create_app=lambda r: app)
 cli.add_command(run_command)
